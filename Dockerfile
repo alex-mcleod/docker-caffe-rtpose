@@ -31,6 +31,10 @@ RUN pip install numpy
 
 WORKDIR /home
 
+RUN git config --global user.email "alex@mcleod.io"
+
+RUN git config --global user.name "Alex McLeod"
+
 RUN git clone https://github.com/Itseez/opencv.git
 
 WORKDIR /home/opencv
