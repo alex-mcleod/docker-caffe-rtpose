@@ -1,11 +1,11 @@
-FROM nvidia/cuda:8.0-cudnn5-runtime-ubuntu16.04
+FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu16.04
 
 LABEL maintainer "Alex McLeod <alex@mcleod.io>"
 
-# http://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/#comment-416102
-
-RUN apt-get update -y
+RUN apt-get update && apt-get install -y --no-install-recommends apt-utils
 RUN apt-get upgrade -y
+
+# Install OpenCV based on http://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/#comment-416102
 
 RUN apt-get install build-essential cmake git pkg-config -y
 
@@ -39,7 +39,7 @@ RUN git clone https://github.com/Itseez/opencv.git
 
 WORKDIR /home/opencv
 
-# The extra bits fix an issue with 3.1.0 and CUDA 8.0 compatibility. See https://github.com/opencv/opencv/issues/6677.
+# The extra bits fix an issue with OpenCV and CUDA 8.0 compatibility. See https://github.com/opencv/opencv/issues/6677.
 RUN git checkout 3.1.0 && git format-patch -1 10896129b39655e19e4e7c529153cb5c2191a1db && git am < 0001-GraphCut-deprecated-in-CUDA-7.5-and-removed-in-8.0.patch
 
 WORKDIR /home
@@ -56,11 +56,15 @@ RUN mkdir build
 
 WORKDIR /home/opencv/ build
 
+# Run this or else cmake will fail
+RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/libcuda.so
+RUN ldconfig
+
 RUN cmake -D CMAKE_BUILD_TYPE=RELEASE \
     -D CMAKE_INSTALL_PREFIX=/usr/local \
-    -D INSTALL_C_EXAMPLES=ON \
+    -D INSTALL_C_EXAMPLES=OFF \
     -D INSTALL_PYTHON_EXAMPLES=ON \
-    -D OPENCV_EXTRA_MODULES_PATH=~/opencv_contrib/modules \
+    -D OPENCV_EXTRA_MODULES_PATH=/home/opencv_contrib/modules \
     -D BUILD_EXAMPLES=ON ..
 
 RUN make -j8
@@ -68,3 +72,20 @@ RUN make -j8
 RUN make install
 
 RUN ldconfig
+
+# Install Caffe and the rtpose program. Based on https://github.com/alex-mcleod/caffe_rtpose.
+
+WORKDIR /home
+
+RUN git clone https://github.com/alex-mcleod/caffe_rtpose
+
+WORKDIR /home/caffe_rtpose
+
+# Checkout correct commit (update this as necessary)
+RUN git pull && git reset --hard  5c38183ccc6a8937cb018842ce0259a02e89a594
+
+RUN chmod u+x install_caffe_and_cpm.sh
+
+RUN apt-get install -y libhdf5-dev lsb-release libgflags-dev libgoogle-glog-dev liblmdb-dev
+
+RUN ./install_caffe_and_cpm.sh
