@@ -89,3 +89,10 @@ RUN chmod u+x install_caffe_and_cpm.sh
 RUN apt-get install -y libhdf5-dev lsb-release libgflags-dev libgoogle-glog-dev liblmdb-dev
 
 RUN ./install_caffe_and_cpm.sh
+
+# Add a "fake" display
+# Install vnc, xvfb in order to create a 'fake' display and firefox
+RUN apt-get install -y x11vnc xvfb
+RUN mkdir ~/.vnc
+# Setup a password
+RUN x11vnc -storepasswd 1234 ~/.vnc/passwd
