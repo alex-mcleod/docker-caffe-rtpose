@@ -1,9 +1,9 @@
 # docker-caffe-rtpose
-Docker image for building and running caffe-rtpose (https://github.com/CMU-Perceptual-Computing-Lab/caffe_rtpose)
+Docker image for building and running caffe-rtpose (https://github.com/CMU-Perceptual-Computing-Lab/caffe_rtpose).
 
-## To run
+## Quick start
 
-1. Install Docker, Nvidia Docker (https://github.com/NVIDIA/nvidia-docker) and an Nvidia driver by running `make install-deps`. This has been tested on an AWS g2.2xlarge instance running Ubuntu 16.04.
+1. Install Docker, Nvidia Docker (https://github.com/NVIDIA/nvidia-docker) and a Nvidia driver by running `make install-deps`. This has been tested on an AWS g2.2xlarge instance running Ubuntu 16.04. You will need to restart the machine after running.
 
 2. Run `make build` to build caffe_rtpose and all of it's dependencies. This will use a forked version of caffe_rtpose which has a properly configured Makefile.config for this environment.
 
