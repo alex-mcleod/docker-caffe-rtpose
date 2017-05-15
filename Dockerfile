@@ -73,24 +73,58 @@ RUN make install
 
 RUN ldconfig
 
-# Install Caffe and the rtpose program. Based on https://github.com/alex-mcleod/caffe_rtpose.
-
-WORKDIR /home
-
-RUN git clone https://github.com/alex-mcleod/caffe_rtpose
-
-WORKDIR /home/caffe_rtpose
-
-# Checkout correct commit (update this as necessary)
-RUN git pull && git reset --hard  5c38183ccc6a8937cb018842ce0259a02e89a594
-
-RUN chmod u+x install_caffe_and_cpm.sh
-
-RUN apt-get install -y libhdf5-dev lsb-release libgflags-dev libgoogle-glog-dev liblmdb-dev
-
-RUN ./install_caffe_and_cpm.sh
-
 # Add support for a display
 
 RUN apt-get install -qqy x11-apps
 ENV DISPLAY :0
+
+# Install Caffe and the rtpose program. Based on https://github.com/alex-mcleod/openpose.
+
+RUN apt-get install -y libhdf5-dev lsb-release libgflags-dev libgoogle-glog-dev liblmdb-dev
+
+RUN apt-get install -y sudo
+
+WORKDIR /home
+
+# This invalidates docker cache every time there is a small
+# change to openpose. Means lengthy rebuilds. That is why openpose_ext folder is used.
+ADD ./openpose ./openpose
+
+# Run install scripts separately rather than using install_caffe_and_openpose.sh,
+# so that we don't have to re-run the lengthy caffe script if there is an issue
+# when running the openpose script.
+# THere is also a "Text file busy" error getting raised when install scripts
+# are run separately.
+WORKDIR /home/openpose/3rdparty/caffe
+
+RUN ./install_caffe.sh
+
+WORKDIR /home/openpose
+
+RUN cp Makefile.config.Ubuntu16.example Makefile.config
+RUN make all -j$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
+
+WORKDIR /home/openpose/models
+
+RUN ./getModels.sh
+
+WORKDIR /home/openpose
+
+# Install flask app which can be used to run rtpose commands via network
+
+ENV PYTHONUNBUFFERED 0
+RUN mkdir /code
+WORKDIR /code
+ADD ./api/requirements.txt /code/
+RUN pip install -r requirements.txt
+ADD ./api /code/
+
+WORKDIR /home/openpose
+# Add changes to rtpose dir and recompile...this means we don't have
+# to recompile the entire project every time there is a small change
+ADD ./openpose_ext/examples/openpose/openpose.cpp /home/openpose/examples/openpose/openpose.cpp
+# This forces make to rebuild this file...otherwise it thinks nothing has changed
+RUN touch /home/openpose/examples/openpose/openpose.cpp
+RUN make examples
+
+WORKDIR /code
