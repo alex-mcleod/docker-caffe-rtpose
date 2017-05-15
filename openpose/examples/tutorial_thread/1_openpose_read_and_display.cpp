@@ -17,8 +17,8 @@
 #include <openpose/thread/headers.hpp>
 #include <openpose/utilities/headers.hpp>
 
-// Gflags in the command line terminal. Check all the options by adding the flag `--help`, e.g. `rtpose.bin --help`.
-// Note: This command will show you flags for several files. Check only the flags for the file you are checking. E.g. for `rtpose`, look for `Flags from examples/openpose/rtpose.cpp:`.
+// Gflags in the command line terminal. Check all the options by adding the flag `--help`, e.g. `openpose.bin --help`.
+// Note: This command will show you flags for several files. Check only the flags for the file you are checking. E.g. for `openpose.bin`, look for `Flags from examples/openpose/openpose.cpp:`.
 // Debugging
 DEFINE_int32(logging_level,             3,              "The logging level. Integer in the range [0, 255]. 0 will output any log() message, while 255 will not output any."
                                                         " Current OpenPose library messages are in the range 0-4: 1 for low priority messages and 4 for important ones.");
@@ -164,16 +164,19 @@ int openPoseTutorialThread1()
     op::log("Starting thread(s)", op::Priority::Max);
     // Two different ways of running the program on multithread enviroment
         // Option a) Using the main thread (this thread) for processing (it saves 1 thread, recommended)
-    // threadManager.exec();  // It blocks this thread until all threads have finished
+    threadManager.exec();  // It blocks this thread until all threads have finished
         // Option b) Giving to the user the control of this thread
-    // Start threads
-    threadManager.start();
-    // Keep program alive while running threads. Here the user could perform any other desired function
-    while (threadManager.isRunning())
-        std::this_thread::sleep_for(std::chrono::milliseconds{33});
-    // Stop and join threads
-    op::log("Stopping thread(s)", op::Priority::Max);
-    threadManager.stop();
+    // // VERY IMPORTANT NOTE: if OpenCV is compiled with Qt support, this option will not work. Qt needs the main thread to
+    // // plot visual results, so the final GUI (which uses OpenCV) would return an exception similar to:
+    // // `QMetaMethod::invoke: Unable to invoke methods with return values in queued connections`
+    // // Start threads
+    // threadManager.start();
+    // // Keep program alive while running threads. Here the user could perform any other desired function
+    // while (threadManager.isRunning())
+    //     std::this_thread::sleep_for(std::chrono::milliseconds{33});
+    // // Stop and join threads
+    // op::log("Stopping thread(s)", op::Priority::Max);
+    // threadManager.stop();
 
     // ------------------------- CLOSING -------------------------
     // Logging information message
